@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Cyber Academy</title>
+    <link rel="stylesheet" href="assets/css/ava.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--dark), var(--dark-2));
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 450px;
+            padding: 2.5rem;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-title {
+            font-size: 2rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-gray);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .perfil-select {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .perfil-option {
+            position: relative;
+        }
+
+        .perfil-option input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .perfil-card {
+            display: block;
+            padding: 1rem;
+            background: var(--dark-3);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .perfil-option input:checked + .perfil-card {
+            border-color: var(--primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .perfil-card:hover {
+            border-color: var(--primary);
+        }
+
+        .perfil-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="card auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">🎓</div>
+                <h1 class="auth-title">Criar Conta</h1>
+                <p style="color: var(--text-gray); margin-top: 0.5rem;">Junte-se à Cyber Academy</p>
+            </div>
+
+            <form id="cadastroForm">
+                <div class="form-group">
+                    <label class="form-label">Nome Completo</label>
+                    <input type="text" id="nome" class="form-control" placeholder="Seu nome" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">E-mail</label>
+                    <input type="email" id="email" class="form-control" placeholder="seu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Senha</label>
+                    <input type="password" id="senha" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tipo de Conta</label>
+                    <div class="perfil-select">
+                        <label class="perfil-option">
+                            <input type="radio" name="perfil" value="aluno" checked>
+                            <span class="perfil-card">
+                                <div class="perfil-icon">👨‍🎓</div>
+                                <div>Aluno</div>
+                            </span>
+                        </label>
+                        <label class="perfil-option">
+                            <input type="radio" name="perfil" value="professor">
+                            <span class="perfil-card">
+                                <div class="perfil-icon">👨‍🏫</div>
+                                <div>Professor</div>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    Criar Conta Grátis
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Já tem uma conta? <a href="login.html">Faça login</a>
+            </div>
+            <div class="auth-footer">
+                <a href="index.html">← Voltar ao início</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/database.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+        document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nome = document.getElementById('nome').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value;
+            const perfil = document.querySelector('input[name="perfil"]:checked').value;
+
+            const result = await Auth.register(nome, email, senha, perfil);
+
+            if (result.success) {
+                alert('Conta criada com sucesso! Faça login para continuar.');
+                window.location.href = 'login.html';
+            } else {
+                alert(result.error);
+            }
+        });
+
+        // Verifica se já está logado
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = Auth.getCurrentUser();
+            if (user) {
+                if (user.perfil === 'professor') {
+                    window.location.href = 'professor/dashboard.html';
+                } else {
+                    window.location.href = 'aluno/dashboard.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

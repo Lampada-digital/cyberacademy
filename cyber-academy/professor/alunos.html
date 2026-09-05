@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Alunos - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        <main class="main-content">
+            <div class="container">
+                <header style="margin-bottom: 2rem;">
+                    <div class="flex flex-between flex-center">
+                        <div>
+                            <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">👥 Meus Alunos</h1>
+                            <p style="color: var(--text-gray);">Gerencie e acompanhe o progresso dos alunos</p>
+                        </div>
+                        <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar aluno..." 
+                               style="max-width: 300px;" oninput="filterAlunos()">
+                    </div>
+                </header>
+
+                <div class="card">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+                                <th style="padding: 1rem;">Nome</th>
+                                <th style="padding: 1rem;">E-mail</th>
+                                <th style="padding: 1rem;">Trilhas</th>
+                                <th style="padding: 1rem;">Progresso Médio</th>
+                                <th style="padding: 1rem;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alunosTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        if (!Auth.requireProfessor()) throw new Error('Não autorizado');
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'alunos', true);
+
+        let allAlunos = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAlunos();
+        });
+
+        function loadAlunos() {
+            const usuarios = DataManager.getUsers().filter(u => u.perfil === 'aluno');
+            const matriculas = DataManager.getMatriculas();
+            const trilhas = DataManager.getTrilhas();
+
+            allAlunos = usuarios.map(aluno => {
+                const mats = matriculas.filter(m => m.userId === aluno.id);
+                let totalProgresso = 0;
+                
+                mats.forEach(m => {
+                    totalProgresso += AVA.calcularProgressoTrilha(aluno.id, m.trilhaId);
+                });
+
+                return {
+                    ...aluno,
+                    matriculas: mats.length,
+                    progressoMedio: mats.length > 0 ? Math.round(totalProgresso / mats.length) : 0,
+                    trilhasNomes: mats.map(m => {
+                        const t = trilhas.find(tr => tr.id === m.trilhaId);
+                        return t ? t.titulo : '';
+                    }).filter(Boolean)
+                };
+            });
+
+            renderTable(allAlunos);
+        }
+
+        function renderTable(alunos) {
+            const tbody = document.getElementById('alunosTable');
+            
+            if (alunos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-gray);">Nenhum aluno encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = alunos.map(aluno => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 1rem;">${aluno.nome}</td>
+                    <td style="padding: 1rem; color: var(--text-gray);">${aluno.email}</td>
+                    <td style="padding: 1rem;">
+                        <span style="color: var(--primary);">${aluno.matriculas}</span>
+                        ${aluno.trilhasNomes.length > 0 ? `<br><small style="color: var(--text-gray);">${aluno.trilhasNomes.slice(0, 2).join(', ')}${aluno.trilhasNomes.length > 2 ? '...' : ''}</small>` : ''}
+                    </td>
+                    <td style="padding: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="progress-container" style="width: 100px;">
+                                <div class="progress-fill" style="width: ${aluno.progressoMedio}%"></div>
+                            </div>
+                            <span>${aluno.progressoMedio}%</span>
+                        </div>
+                    </td>
+                    <td style="padding: 1rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="verDetalhes(${aluno.id})">Ver Detalhes</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterAlunos() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allAlunos.filter(a => 
+                a.nome.toLowerCase().includes(search) || 
+                a.email.toLowerCase().includes(search)
+            );
+            renderTable(filtered);
+        }
+
+        function verDetalhes(alunoId) {
+            const aluno = allAlunos.find(a => a.id === alunoId);
+            if (!aluno) return;
+
+            const trilhas = DataManager.getTrilhas();
+            const matriculas = DataManager.getMatriculasByUserId(alunoId);
+
+            const detalhes = matriculas.map(m => {
+                const trilha = trilhas.find(t => t.id === m.trilhaId);
+                const progresso = AVA.calcularProgressoTrilha(alunoId, m.trilhaId);
+                return `
+                    <div style="padding: 0.75rem; background: var(--dark-3); border-radius: 8px; margin-bottom: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <strong>${trilha ? trilha.titulo : 'Trilha'}</strong>
+                            <span style="color: var(--primary);">${progresso}%</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-fill" style="width: ${progresso}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<p style="color: var(--text-gray);">Nenhuma matrícula encontrada</p>';
+
+            AVA.showModal(`
+                <div style="text-align: left;">
+                    <h3 style="margin-bottom: 1rem;">${aluno.nome}</h3>
+                    <p style="color: var(--text-gray); margin-bottom: 1.5rem;">${aluno.email}</p>
+                    <h4 style="margin-bottom: 1rem;">Progresso por Trilha</h4>
+                    ${detalhes}
+                </div>
+            `);
+        }
+    </script>
+</body>
+</html>

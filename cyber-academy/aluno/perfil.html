@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        
+        <main class="main-content">
+            <div class="container">
+                <header style="margin-bottom: 2rem;">
+                    <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">👤 Meu Perfil</h1>
+                    <p style="color: var(--text-gray);">Gerencie suas informações pessoais</p>
+                </header>
+
+                <div class="grid grid-2">
+                    <!-- Informações Pessoais -->
+                    <div class="card">
+                        <h3 style="margin-bottom: 1.5rem;">Informações Pessoais</h3>
+                        
+                        <form id="perfilForm">
+                            <div class="form-group">
+                                <label class="form-label">Nome Completo</label>
+                                <input type="text" id="nome" class="form-control" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">E-mail</label>
+                                <input type="email" id="email" class="form-control" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tipo de Conta</label>
+                                <input type="text" class="form-control" id="perfil" disabled 
+                                       style="opacity: 0.6; cursor: not-allowed;">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Membro desde</label>
+                                <input type="text" class="form-control" id="createdAt" disabled 
+                                       style="opacity: 0.6; cursor: not-allowed;">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                Salvar Alterações
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="card">
+                        <h3 style="margin-bottom: 1.5rem;">Minhas Estatísticas</h3>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 2rem;">📚</div>
+                                <div>
+                                    <p style="color: var(--text-gray); font-size: 0.9rem;">Trilhas Matriculadas</p>
+                                    <h4 style="font-size: 1.5rem;" id="statTrilhas">0</h4>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 2rem;">🎬</div>
+                                <div>
+                                    <p style="color: var(--text-gray); font-size: 0.9rem;">Aulas Concluídas</p>
+                                    <h4 style="font-size: 1.5rem;" id="statAulas">0</h4>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 2rem;">🏆</div>
+                                <div>
+                                    <p style="color: var(--text-gray); font-size: 0.9rem;">Certificados</p>
+                                    <h4 style="font-size: 1.5rem;" id="statCertificados">0</h4>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 2rem;">⏱️</div>
+                                <div>
+                                    <p style="color: var(--text-gray); font-size: 0.9rem;">Tempo de Estudo</p>
+                                    <h4 style="font-size: 1.5rem;" id="statTempo">0h</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Segurança -->
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <h3 style="margin-bottom: 1.5rem;">Segurança</h3>
+                        
+                        <form id="senhaForm">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Senha Atual</label>
+                                    <input type="password" id="senhaAtual" class="form-control" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Nova Senha</label>
+                                    <input type="password" id="novaSenha" class="form-control" required minlength="6">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Confirmar Nova Senha</label>
+                                    <input type="password" id="confirmarSenha" class="form-control" required minlength="6">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-secondary mt-2">
+                                Alterar Senha
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        if (!Auth.requireAluno()) throw new Error('Não autorizado');
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'perfil');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPerfilData();
+        });
+
+        function loadPerfilData() {
+            // Preenche formulário
+            document.getElementById('nome').value = user.nome;
+            document.getElementById('email').value = user.email;
+            document.getElementById('perfil').value = user.perfil === 'aluno' ? 'Aluno' : 'Professor';
+            document.getElementById('createdAt').value = AVA.formatDate(user.createdAt);
+
+            // Carrega estatísticas
+            const matriculas = DataManager.getMatriculasByUserId(user.id);
+            const certificados = DataManager.getCertificadosByUserId(user.id);
+            
+            let totalAulas = 0;
+            matriculas.forEach(m => {
+                const progresso = DataManager.getProgressoByUser(user.id)[`${user.id}_${m.trilhaId}`] || {};
+                Object.values(progresso).forEach(aulas => totalAulas += aulas.length);
+            });
+
+            document.getElementById('statTrilhas').textContent = matriculas.length;
+            document.getElementById('statAulas').textContent = totalAulas;
+            document.getElementById('statCertificados').textContent = certificados.length;
+            document.getElementById('statTempo').textContent = `${(totalAulas * 0.5).toFixed(1)}h`;
+        }
+
+        // Salvar alterações no perfil
+        document.getElementById('perfilForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const nome = document.getElementById('nome').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            // Atualiza usuário
+            const usuarios = DataManager.getUsers();
+            const index = usuarios.findIndex(u => u.id === user.id);
+            
+            if (index !== -1) {
+                usuarios[index].nome = nome;
+                usuarios[index].email = email;
+                Storage.set('usuarios', usuarios);
+
+                // Atualiza sessão
+                sessionStorage.setItem(Auth.SESSION_KEY, JSON.stringify(usuarios[index]));
+                
+                AVA.showToast('Perfil atualizado com sucesso!', 'success');
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            }
+        });
+
+        // Alterar senha
+        document.getElementById('senhaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const senhaAtual = document.getElementById('senhaAtual').value;
+            const novaSenha = document.getElementById('novaSenha').value;
+            const confirmarSenha = document.getElementById('confirmarSenha').value;
+
+            if (senhaAtual !== user.senha) {
+                alert('Senha atual incorreta');
+                return;
+            }
+
+            if (novaSenha !== confirmarSenha) {
+                alert('As novas senhas não coincidem');
+                return;
+            }
+
+            if (novaSenha.length < 6) {
+                alert('A nova senha deve ter no mínimo 6 caracteres');
+                return;
+            }
+
+            // Atualiza senha
+            const usuarios = DataManager.getUsers();
+            const index = usuarios.findIndex(u => u.id === user.id);
+            
+            if (index !== -1) {
+                usuarios[index].senha = novaSenha;
+                Storage.set('usuarios', usuarios);
+
+                // Atualiza sessão
+                usuarios[index].senha = '[PROTECTED]';
+                sessionStorage.setItem(Auth.SESSION_KEY, JSON.stringify(usuarios[index]));
+
+                AVA.showToast('Senha alterada com sucesso!', 'success');
+                
+                document.getElementById('senhaForm').reset();
+            }
+        });
+    </script>
+</body>
+</html>

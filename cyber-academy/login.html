@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Cyber Academy</title>
+    <link rel="stylesheet" href="assets/css/ava.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--dark), var(--dark-2));
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 450px;
+            padding: 2.5rem;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-title {
+            font-size: 2rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .demo-credentials {
+            background: var(--dark-3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+        }
+
+        .demo-credentials strong {
+            color: var(--primary);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-gray);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="card auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">🎓</div>
+                <h1 class="auth-title">Cyber Academy</h1>
+                <p style="color: var(--text-gray); margin-top: 0.5rem;">Faça login para continuar</p>
+            </div>
+
+            <div class="demo-credentials">
+                <strong>Credenciais Demo:</strong><br>
+                Aluno: aluno@cyberacademy.com / aluno123<br>
+                Professor: admin@cyberacademy.com / admin123
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">E-mail</label>
+                    <input type="email" id="email" class="form-control" placeholder="seu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Senha</label>
+                    <input type="password" id="senha" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    Entrar
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Não tem uma conta? <a href="cadastro.html">Cadastre-se grátis</a>
+            </div>
+            <div class="auth-footer">
+                <a href="index.html">← Voltar ao início</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/database.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value;
+
+            const result = await Auth.login(email, senha);
+
+            if (result.success) {
+                // Redireciona baseado no perfil
+                if (result.user.perfil === 'professor') {
+                    window.location.href = 'professor/dashboard.html';
+                } else {
+                    window.location.href = 'aluno/dashboard.html';
+                }
+            } else {
+                alert(result.error);
+            }
+        });
+
+        // Verifica se já está logado
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = Auth.getCurrentUser();
+            if (user) {
+                if (user.perfil === 'professor') {
+                    window.location.href = 'professor/dashboard.html';
+                } else {
+                    window.location.href = 'aluno/dashboard.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

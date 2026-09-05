@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrícula - Cyber Academy</title>
+    <link rel="stylesheet" href="assets/css/ava.css">
+    <style>
+        .matricula-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .matricula-header h1 {
+            font-size: 2.5rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .trilha-card-matricula {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .trilha-card-matricula:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .trilha-card-matricula.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+        }
+
+        .trilha-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .trilha-price {
+            font-size: 1.75rem;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+
+        .payment-modal .modal {
+            max-width: 600px;
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .payment-method {
+            padding: 1.5rem;
+            background: var(--dark-3);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-method:hover,
+        .payment-method.selected {
+            border-color: var(--primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .payment-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-details {
+            background: var(--dark-3);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .pix-code {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        
+        <main class="main-content">
+            <div class="container">
+                <div class="matricula-header">
+                    <h1>🎓 Escolha sua Trilha</h1>
+                    <p style="color: var(--text-gray);">Invista no seu futuro com nossos cursos profissionais</p>
+                </div>
+
+                <div class="grid grid-3" id="trilhas-grid">
+                    <!-- Trilhas serão carregadas via JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Pagamento -->
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal payment-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Finalizar Matrícula</h3>
+                <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+            </div>
+            
+            <div id="modalContent">
+                <p style="margin-bottom: 1rem;"><strong>Trilha:</strong> <span id="selectedTrilhaNome"></span></p>
+                <p style="margin-bottom: 1.5rem; color: var(--primary); font-size: 1.5rem;">Valor: <span id="selectedTrilhaPreco"></span></p>
+
+                <h4 style="margin-bottom: 1rem;">Forma de Pagamento</h4>
+                <div class="payment-methods">
+                    <div class="payment-method" data-method="cartao" onclick="selectPaymentMethod('cartao')">
+                        <div class="payment-icon">💳</div>
+                        <div>Cartão</div>
+                    </div>
+                    <div class="payment-method" data-method="pix" onclick="selectPaymentMethod('pix')">
+                        <div class="payment-icon">💠</div>
+                        <div>PIX</div>
+                    </div>
+                    <div class="payment-method" data-method="boleto" onclick="selectPaymentMethod('boleto')">
+                        <div class="payment-icon">📄</div>
+                        <div>Boleto</div>
+                    </div>
+                </div>
+
+                <div id="cardDetails" class="card-details hidden">
+                    <div class="form-group">
+                        <label class="form-label">Número do Cartão</label>
+                        <input type="text" class="form-control" placeholder="0000 0000 0000 0000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nome no Cartão</label>
+                        <input type="text" class="form-control" placeholder="Como impresso no cartão">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Validade</label>
+                            <input type="text" class="form-control" placeholder="MM/AA">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CVV</label>
+                            <input type="text" class="form-control" placeholder="000">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pixDetails" class="hidden">
+                    <p style="margin-bottom: 1rem;">Escaneie o QR Code ou use o código PIX abaixo:</p>
+                    <div class="pix-code">00020126580014BR.GOV.BCB.PIX0136123e4567-e89b-12d3-a456-4266141740005204000053039865802BR5913Cyber Academy6008Brasilia62070503***6304ABCD</div>
+                </div>
+
+                <div id="boletoDetails" class="hidden">
+                    <p style="margin-bottom: 1rem;">O boleto será gerado após confirmação:</p>
+                    <div class="pix-code">23793.38128 60000.028574 31002.015358 1 9876543210000019700</div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="confirmarMatricula()" style="margin-top: 1.5rem;">
+                    Confirmar Matrícula
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/database.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/ava.js"></script>
+    <script>
+        let selectedTrilha = null;
+        let selectedMethod = null;
+
+        // Verifica autenticação
+        if (!Auth.requireAluno()) {
+            throw new Error('Não autorizado');
+        }
+
+        const user = Auth.getCurrentUser();
+
+        // Renderiza sidebar
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'matricula');
+
+        // Carrega trilhas
+        document.addEventListener('DOMContentLoaded', () => {
+            const trilhasGrid = document.getElementById('trilhas-grid');
+            const trilhas = DataManager.getTrilhas();
+            const matriculas = DataManager.getMatriculasByUserId(user.id);
+            const matriculadosIds = matriculas.map(m => m.trilhaId);
+
+            trilhasGrid.innerHTML = trilhas.map(trilha => {
+                const isMatriculado = matriculadosIds.includes(trilha.id);
+                
+                return `
+                    <div class="card trilha-card-matricula ${isMatriculado ? 'selected' : ''}" 
+                         onclick="${!isMatriculado ? `selectTrilha(${trilha.id})` : ''}">
+                        <img src="${trilha.imagem}" alt="${trilha.titulo}" class="trilha-image">
+                        <h3>${trilha.titulo}</h3>
+                        <p style="color: var(--text-gray); margin: 0.5rem 0;">${trilha.descricao}</p>
+                        <div class="trilha-info">
+                            <span>📚 ${trilha.totalModulos} módulos</span>
+                            <span>🎬 ${trilha.totalAulas} aulas</span>
+                            <span>⏱️ ${trilha.duracao}</span>
+                        </div>
+                        <div class="trilha-price">R$ ${trilha.preco.toFixed(2).replace('.', ',')}</div>
+                        ${isMatriculado 
+                            ? '<button class="btn btn-success btn-block" disabled>✅ Matriculado</button>'
+                            : '<button class="btn btn-primary btn-block">Matricular</button>'
+                        }
+                    </div>
+                `;
+            }).join('');
+        });
+
+        function selectTrilha(id) {
+            selectedTrilha = DataManager.getTrilhaById(id);
+            
+            document.getElementById('selectedTrilhaNome').textContent = selectedTrilha.titulo;
+            document.getElementById('selectedTrilhaPreco').textContent = `R$ ${selectedTrilha.preco.toFixed(2).replace('.', ',')}`;
+            
+            document.getElementById('paymentModal').classList.add('active');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            selectedTrilha = null;
+            selectedMethod = null;
+            
+            document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
+            document.getElementById('cardDetails').classList.add('hidden');
+            document.getElementById('pixDetails').classList.add('hidden');
+            document.getElementById('boletoDetails').classList.add('hidden');
+        }
+
+        function selectPaymentMethod(method) {
+            selectedMethod = method;
+            
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.toggle('selected', el.dataset.method === method);
+            });
+
+            document.getElementById('cardDetails').classList.add('hidden');
+            document.getElementById('pixDetails').classList.add('hidden');
+            document.getElementById('boletoDetails').classList.add('hidden');
+
+            if (method === 'cartao') {
+                document.getElementById('cardDetails').classList.remove('hidden');
+            } else if (method === 'pix') {
+                document.getElementById('pixDetails').classList.remove('hidden');
+            } else if (method === 'boleto') {
+                document.getElementById('boletoDetails').classList.remove('hidden');
+            }
+        }
+
+        async function confirmarMatricula() {
+            if (!selectedTrilha) return;
+            if (!selectedMethod) {
+                alert('Selecione uma forma de pagamento');
+                return;
+            }
+
+            try {
+                // Cria matrícula
+                DataManager.createMatricula({
+                    userId: user.id,
+                    trilhaId: selectedTrilha.id,
+                    metodoPagamento: selectedMethod,
+                    valor: selectedTrilha.preco
+                });
+
+                AVA.showToast('Matrícula realizada com sucesso!', 'success');
+                
+                setTimeout(() => {
+                    closePaymentModal();
+                    window.location.href = 'aluno/dashboard.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Erro ao matricular:', error);
+                alert('Erro ao realizar matrícula. Tente novamente.');
+            }
+        }
+
+        // Fecha modal ao clicar fora
+        document.getElementById('paymentModal').addEventListener('click', (e) => {
+            if (e.target.id === 'paymentModal') {
+                closePaymentModal();
+            }
+        });
+    </script>
+</body>
+</html>

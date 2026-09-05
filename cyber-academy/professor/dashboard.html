@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Professor - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        
+        <main class="main-content">
+            <div class="container">
+                <header style="margin-bottom: 2rem;">
+                    <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">👨‍🏫 Dashboard do Professor</h1>
+                    <p style="color: var(--text-gray);">Visão geral dos seus alunos e trilhas</p>
+                </header>
+
+                <div class="grid grid-4 mb-4">
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">👥</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Total de Alunos</p>
+                                <h3 style="font-size: 2rem;" id="statAlunos">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">📚</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Trilhas Ativas</p>
+                                <h3 style="font-size: 2rem;" id="statTrilhas">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">🎬</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Matrículas</p>
+                                <h3 style="font-size: 2rem;" id="statMatriculas">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">📊</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Progresso Médio</p>
+                                <h3 style="font-size: 2rem;" id="statProgresso">0%</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3 style="margin-bottom: 1.5rem;">📚 Trilhas Disponíveis</h3>
+                        <div id="trilhasList"></div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 style="margin-bottom: 1.5rem;">👥 Últimos Alunos</h3>
+                        <div id="alunosList"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        if (!Auth.requireProfessor()) throw new Error('Não autorizado');
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'dashboard', true);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+
+        function loadDashboardData() {
+            const trilhas = DataManager.getTrilhas();
+            const matriculas = DataManager.getMatriculas();
+            const usuarios = DataManager.getUsers().filter(u => u.perfil === 'aluno');
+
+            // Estatísticas
+            document.getElementById('statAlunos').textContent = usuarios.length;
+            document.getElementById('statTrilhas').textContent = trilhas.length;
+            document.getElementById('statMatriculas').textContent = matriculas.length;
+
+            // Calcula progresso médio
+            let totalProgresso = 0;
+            let count = 0;
+            matriculas.forEach(m => {
+                const userProg = DataManager.getProgressoByUser(m.userId)[`${m.userId}_${m.trilhaId}`];
+                if (userProg) {
+                    const trilha = DataManager.getTrilhaById(m.trilhaId);
+                    if (trilha) {
+                        const prog = AVA.calcularProgressoTrilha(m.userId, m.trilhaId);
+                        totalProgresso += prog;
+                        count++;
+                    }
+                }
+            });
+            document.getElementById('statProgresso').textContent = count > 0 ? `${Math.round(totalProgresso / count)}%` : '0%';
+
+            // Lista trilhas
+            document.getElementById('trilhasList').innerHTML = trilhas.map(t => `
+                <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4>${t.titulo}</h4>
+                        <p style="color: var(--text-gray); font-size: 0.85rem;">${t.totalModulos} módulos • ${t.totalAulas} aulas</p>
+                    </div>
+                    <a href="gerenciar-trilha.html?id=${t.id}" class="btn btn-secondary btn-sm">Gerenciar</a>
+                </div>
+            `).join('');
+
+            // Lista últimos alunos
+            const ultimosAlunos = usuarios.slice(-5).reverse();
+            document.getElementById('alunosList').innerHTML = ultimosAlunos.map(a => {
+                const mats = matriculas.filter(m => m.userId === a.id);
+                return `
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4>${a.nome}</h4>
+                                <p style="color: var(--text-gray); font-size: 0.85rem;">${a.email}</p>
+                            </div>
+                            <span style="color: var(--primary);">${mats.length} matrículas</span>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<p style="color: var(--text-gray); padding: 1rem;">Nenhum aluno cadastrado</p>';
+        }
+    </script>
+</body>
+</html>

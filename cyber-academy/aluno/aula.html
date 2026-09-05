@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aula - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        
+        <main class="main-content">
+            <div class="container">
+                <a href="trilha.html?id=<%= trilhaId %>" class="btn btn-secondary btn-sm mb-2">← Voltar à Trilha</a>
+                
+                <div id="aulaContent">
+                    <!-- Conteúdo carregado via JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        if (!Auth.requireAluno()) throw new Error('Não autorizado');
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, '');
+
+        // Pega parâmetros da URL
+        const params = new URLSearchParams(window.location.search);
+        const trilhaId = parseInt(params.get('trilhaId'));
+        const moduloId = parseInt(params.get('moduloId'));
+        const aulaId = parseInt(params.get('aulaId'));
+
+        let currentAula = null;
+        let currentTrilha = null;
+        let currentModulo = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAula();
+        });
+
+        function loadAula() {
+            currentTrilha = DataManager.getTrilhaById(trilhaId);
+            
+            if (!currentTrilha) {
+                showError('Trilha não encontrada');
+                return;
+            }
+
+            currentModulo = currentTrilha.modulos.find(m => m.id === moduloId);
+            
+            if (!currentModulo) {
+                showError('Módulo não encontrado');
+                return;
+            }
+
+            currentAula = currentModulo.aulas.find(a => a.id === aulaId);
+            
+            if (!currentAula) {
+                showError('Aula não encontrada');
+                return;
+            }
+
+            renderAula();
+        }
+
+        function showError(message) {
+            document.getElementById('aulaContent').innerHTML = `
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <h3>${message}</h3>
+                    <a href="dashboard.html" class="btn btn-primary mt-2">Voltar ao Dashboard</a>
+                </div>
+            `;
+        }
+
+        function renderAula() {
+            const progressoData = DataManager.getProgressoByUser(user.id)[`${user.id}_${trilhaId}`] || {};
+            const aulasConcluidas = progressoData[moduloId] || [];
+            const isCompleted = aulasConcluidas.includes(aulaId);
+
+            // Navegação entre aulas
+            const aulaIndex = currentModulo.aulas.findIndex(a => a.id === aulaId);
+            const prevAula = aulaIndex > 0 ? currentModulo.aulas[aulaIndex - 1] : null;
+            const nextAula = aulaIndex < currentModulo.aulas.length - 1 ? currentModulo.aulas[aulaIndex + 1] : null;
+
+            // Carrega anotações salvas
+            const anotacoesKey = `anotacao_${user.id}_${trilhaId}_${moduloId}_${aulaId}`;
+            const savedAnotacoes = localStorage.getItem(`ca_${anotacoesKey}`) || '';
+
+            document.getElementById('aulaContent').innerHTML = `
+                <div class="card mb-4">
+                    <div class="flex flex-between mb-2">
+                        <div>
+                            <span style="color: var(--primary); font-size: 0.9rem;">${currentTrilha.titulo}</span>
+                            <h1 style="font-size: 1.75rem; margin-top: 0.5rem;">${currentAula.titulo}</h1>
+                        </div>
+                        <div class="flex gap-1">
+                            ${prevAula ? `
+                                <button onclick="goToAula(${prevAula.id})" class="btn btn-secondary btn-sm">
+                                    ← Anterior
+                                </button>
+                            ` : ''}
+                            ${nextAula ? `
+                                <button onclick="goToAula(${nextAula.id})" class="btn btn-secondary btn-sm">
+                                    Próxima →
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="video-container">
+                        ${AVA.getVideoEmbed(currentAula.videoUrl || '')}
+                    </div>
+
+                    <div class="flex flex-between flex-center mb-3">
+                        <span style="color: var(--text-gray);">
+                            Duração: ${currentAula.duracao} • Tipo: ${currentAula.tipo}
+                        </span>
+                        <button id="btnComplete" 
+                                class="btn ${isCompleted ? 'btn-success' : 'btn-primary'}"
+                                onclick="toggleComplete()">
+                            ${isCompleted ? '✅ Concluída' : '📝 Marcar como Concluída'}
+                        </button>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('descricao')">Descrição</button>
+                        <button class="tab-btn" onclick="switchTab('materiais')">Materiais</button>
+                        <button class="tab-btn" onclick="switchTab('anotacoes')">Anotações</button>
+                        <button class="tab-btn" onclick="switchTab('duvidas')">Dúvidas</button>
+                    </div>
+
+                    <div id="tab-descricao" class="tab-content active">
+                        <p style="color: var(--text-gray); line-height: 1.8;">
+                            ${currentAula.descricao || `
+                                Bem-vindo à aula "${currentAula.titulo}".
+                                <br><br>
+                                Assista ao vídeo acima e complete as atividades propostas.
+                                Ao finalizar, marque esta aula como concluída para registrar seu progresso.
+                            `}
+                        </p>
+                    </div>
+
+                    <div id="tab-materiais" class="tab-content">
+                        <p style="color: var(--text-gray); margin-bottom: 1rem;">
+                            Materiais de apoio disponíveis para download:
+                        </p>
+                        <div id="materiaisList">
+                            <p style="color: var(--text-gray); padding: 2rem; text-align: center;">
+                                Nenhum material disponível nesta aula.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="tab-anotacoes" class="tab-content">
+                        <textarea id="anotacoesText" 
+                                  class="form-control" 
+                                  rows="10" 
+                                  placeholder="Faça suas anotações aqui... Elas serão salvas automaticamente."
+                                  oninput="saveAnotacoes('${anotacoesKey}')">${savedAnotacoes}</textarea>
+                        <p style="color: var(--text-gray); font-size: 0.85rem; margin-top: 0.5rem;">
+                            💡 Suas anotações são salvas automaticamente no navegador.
+                        </p>
+                    </div>
+
+                    <div id="tab-duvidas" class="tab-content">
+                        <div class="card" style="background: var(--dark-3);">
+                            <h4 style="margin-bottom: 1rem;">Tem alguma dúvida?</h4>
+                            <p style="color: var(--text-gray); margin-bottom: 1rem;">
+                                Entre em contato com nosso suporte ou participe do fórum da comunidade.
+                            </p>
+                            <button class="btn btn-secondary" onclick="AVA.showToast('Funcionalidade em desenvolvimento', 'warning')">
+                                Enviar Dúvida
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Próximas Aulas -->
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Próximas Aulas</h3>
+                    <div class="lesson-list">
+                        ${currentModulo.aulas.slice(aulaIndex + 1, aulaIndex + 6).map(aula => `
+                            <div class="lesson-item" onclick="goToAula(${aula.id})">
+                                <span class="lesson-icon">${aulasConcluidas.includes(aula.id) ? '✅' : '▶️'}</span>
+                                <div class="lesson-info">
+                                    <div class="lesson-title">${aula.titulo}</div>
+                                    <div class="lesson-duration">${aula.duracao}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        function saveAnotacoes(key) {
+            const text = document.getElementById('anotacoesText').value;
+            localStorage.setItem(`ca_${key}`, text);
+        }
+
+        function toggleComplete() {
+            const progressoData = DataManager.getProgressoByUser(user.id)[`${user.id}_${trilhaId}`] || {};
+            const aulasConcluidas = progressoData[moduloId] || [];
+            const isCompleted = aulasConcluidas.includes(aulaId);
+
+            if (!isCompleted) {
+                DataManager.salvarProgresso(user.id, trilhaId, moduloId, aulaId);
+                AVA.showToast('Aula marcada como concluída!', 'success');
+                
+                // Verifica se completou a trilha
+                setTimeout(() => {
+                    checkTrilhaCompleta();
+                }, 500);
+            }
+
+            loadAula(); // Recarrega para atualizar UI
+        }
+
+        function checkTrilhaCompleta() {
+            const progresso = AVA.calcularProgressoTrilha(user.id, trilhaId);
+            
+            if (progresso === 100) {
+                // Emite certificado
+                const certificados = DataManager.getCertificadosByUserId(user.id);
+                const alreadyHasCert = certificados.some(c => c.trilhaId === trilhaId);
+                
+                if (!alreadyHasCert) {
+                    const certificado = DataManager.emitirCertificado(user.id, trilhaId);
+                    
+                    setTimeout(() => {
+                        const overlay = AVA.showModal(`
+                            <div style="text-align: center;">
+                                <div style="font-size: 4rem; margin-bottom: 1rem;">🏆</div>
+                                <h2 style="margin-bottom: 1rem;">Parabéns!</h2>
+                                <p style="color: var(--text-gray); margin-bottom: 1.5rem;">
+                                    Você completou a trilha "${currentTrilha.titulo}"!
+                                </p>
+                                <div class="certificate-card" style="margin-bottom: 1.5rem;">
+                                    <p>Código do Certificado</p>
+                                    <div class="certificate-code">${certificado.codigo}</div>
+                                </div>
+                                <button onclick="imprimirCertificado(${certificado.id})" class="btn btn-primary btn-block">
+                                    📄 Imprimir Certificado
+                                </button>
+                            </div>
+                        `);
+                    }, 1000);
+                }
+            }
+        }
+
+        function goToAula(aulaId) {
+            window.location.href = `aula.html?trilhaId=${trilhaId}&moduloId=${moduloId}&aulaId=${aulaId}`;
+        }
+
+        function imprimirCertificado(certId) {
+            const cert = DataManager.getCertificados().find(c => c.id === certId);
+            if (!cert) return;
+
+            const trilha = DataManager.getTrilhaById(cert.trilhaId);
+            const userData = DataManager.getUserById(cert.userId);
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Certificado - ${userData.nome}</title>
+                    <style>
+                        body {
+                            font-family: 'Georgia', serif;
+                            text-align: center;
+                            padding: 50px;
+                            background: linear-gradient(135deg, #0a0e1a, #111827);
+                            color: #f3f4f6;
+                        }
+                        .certificate {
+                            border: 10px solid #00d9ff;
+                            padding: 40px;
+                            max-width: 800px;
+                            margin: 0 auto;
+                            background: rgba(17, 24, 39, 0.8);
+                        }
+                        h1 { font-size: 3rem; color: #00d9ff; margin-bottom: 10px; }
+                        h2 { font-size: 2rem; margin-bottom: 30px; }
+                        .recipient { font-size: 2.5rem; color: #7c3aed; margin: 30px 0; }
+                        .course { font-size: 1.5rem; margin: 20px 0; }
+                        .code { font-family: monospace; font-size: 1.2rem; margin-top: 30px; color: #9ca3af; }
+                        .date { margin-top: 20px; color: #9ca3af; }
+                    </style>
+                </head>
+                <body>
+                    <div class="certificate">
+                        <h1>🎓 Cyber Academy</h1>
+                        <h2>Certificado de Conclusão</h2>
+                        <p>Certificamos que</p>
+                        <div class="recipient">${userData.nome}</div>
+                        <p>concluiu com êxito a trilha</p>
+                        <div class="course">${trilha.titulo}</div>
+                        <p>Carga horária: ${trilha.duracao}</p>
+                        <div class="code">Código: ${cert.codigo}</div>
+                        <div class="date">Emitido em: ${AVA.formatDate(cert.dataEmissao)}</div>
+                    </div>
+                    <script>window.onload = () => { window.print(); }</script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    </script>
+</body>
+</html>

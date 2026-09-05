@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilha - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        
+        <main class="main-content">
+            <div class="container">
+                <a href="dashboard.html" class="btn btn-secondary btn-sm mb-2">← Voltar ao Dashboard</a>
+                
+                <div id="trilhaContent">
+                    <!-- Conteúdo carregado via JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        if (!Auth.requireAluno()) throw new Error('Não autorizado');
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'minhas-trilhas');
+
+        // Pega parâmetros da URL
+        const params = new URLSearchParams(window.location.search);
+        const trilhaId = params.get('id');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTrilha(trilhaId);
+        });
+
+        function loadTrilha(id) {
+            const trilha = DataManager.getTrilhaById(id);
+            
+            if (!trilha) {
+                document.getElementById('trilhaContent').innerHTML = `
+                    <div class="card" style="text-align: center; padding: 3rem;">
+                        <h3>Trilha não encontrada</h3>
+                        <a href="dashboard.html" class="btn btn-primary mt-2">Voltar ao Dashboard</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const progresso = AVA.calcularProgressoTrilha(user.id, trilha.id);
+            const progressoData = DataManager.getProgressoByUser(user.id)[`${user.id}_${trilha.id}`] || {};
+
+            document.getElementById('trilhaContent').innerHTML = `
+                <div class="card mb-4">
+                    <div style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem; align-items: center;">
+                        <img src="${trilha.imagem}" alt="${trilha.titulo}" 
+                             style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                        <div>
+                            <h1 style="font-size: 2rem; margin-bottom: 1rem;">${trilha.titulo}</h1>
+                            <p style="color: var(--text-gray); margin-bottom: 1.5rem;">${trilha.descricao}</p>
+                            
+                            <div class="trilha-info mb-3">
+                                <span>📚 ${trilha.totalModulos} módulos</span>
+                                <span>🎬 ${trilha.totalAulas} aulas</span>
+                                <span>⏱️ ${trilha.duracao}</span>
+                            </div>
+
+                            <div style="max-width: 400px;">
+                                <div class="flex flex-between mb-1">
+                                    <span>Seu Progresso</span>
+                                    <span style="color: var(--primary); font-weight: 600;">${progresso}%</span>
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-fill" style="width: ${progresso}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 style="margin-bottom: 1.5rem;">📖 Módulos da Trilha</h2>
+                
+                ${trilha.modulos.map((modulo, modIndex) => {
+                    const aulasConcluidas = progressoData[modulo.id] || [];
+                    
+                    return `
+                        <div class="module" id="modulo-${modulo.id}">
+                            <div class="module-header" onclick="toggleModule(${modulo.id})">
+                                <div class="module-title">
+                                    <span style="font-size: 1.5rem;">${modIndex + 1}.</span>
+                                    <span>${modulo.titulo}</span>
+                                    <span style="color: var(--text-gray); font-size: 0.9rem; margin-left: 1rem;">
+                                        (${modulo.aulas.length} aulas)
+                                    </span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <span style="color: var(--primary);">${aulasConcluidas.length}/${modulo.aulas.length} concluídas</span>
+                                    <span style="font-size: 1.5rem;">▼</span>
+                                </div>
+                            </div>
+                            
+                            <div class="module-content">
+                                <div class="lesson-list">
+                                    ${modulo.aulas.map((aula, aulaIndex) => {
+                                        const isCompleted = aulasConcluidas.includes(aula.id);
+                                        const icon = isCompleted ? '✅' : (aula.tipo === 'pratica' ? '🛠️' : '▶️');
+                                        const statusClass = isCompleted ? 'completed' : '';
+                                        
+                                        return `
+                                            <div class="lesson-item ${statusClass}" 
+                                                 onclick="goToAula(${trilha.id}, ${modulo.id}, ${aula.id})">
+                                                <span class="lesson-icon">${icon}</span>
+                                                <div class="lesson-info">
+                                                    <div class="lesson-title">${aulaIndex + 1}. ${aula.titulo}</div>
+                                                    <div class="lesson-duration">${aula.duracao} • ${aula.tipo}</div>
+                                                </div>
+                                                <span style="color: var(--text-gray); font-size: 0.9rem;">→</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+
+            // Expande primeiro módulo
+            const firstModule = document.querySelector('.module');
+            if (firstModule) firstModule.classList.add('expanded');
+        }
+
+        function toggleModule(moduloId) {
+            const module = document.getElementById(`modulo-${moduloId}`);
+            module.classList.toggle('expanded');
+        }
+
+        function goToAula(trilhaId, moduloId, aulaId) {
+            window.location.href = `aula.html?trilhaId=${trilhaId}&moduloId=${moduloId}&aulaId=${aulaId}`;
+        }
+    </script>
+</body>
+</html>

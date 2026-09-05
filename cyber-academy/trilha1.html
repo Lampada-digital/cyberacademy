@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ferramentas do Dev - Cyber Academy</title>
+    <link rel="stylesheet" href="assets/css/ava.css">
+    <style>
+        .hero {
+            background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(17, 24, 39, 0.9)),
+                        url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1920&h=1080&fit=crop');
+            background-size: cover;
+            background-position: center;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .modules-section { padding: 3rem 2rem; }
+        .module-card { margin-bottom: 2rem; }
+        .cta-section {
+            background: var(--dark-2);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🛠️ Ferramentas do Dev</h1>
+        <p style="font-size: 1.25rem; color: var(--text-gray); max-width: 700px; margin: 0 auto 2rem;">
+            Domine as ferramentas essenciais para desenvolvimento moderno. Aprenda Git, GitHub, Vercel e crie seu primeiro projeto profissional.
+        </p>
+        <div class="flex gap-2" style="justify-content: center; flex-wrap: wrap;">
+            <span>📚 4 módulos</span>
+            <span>🎬 32 aulas</span>
+            <span>⏱️ ~20h</span>
+        </div>
+        <div style="margin-top: 2rem;">
+            <a href="login.html" class="btn btn-primary btn-lg">Começar Agora</a>
+        </div>
+    </div>
+
+    <section class="modules-section container">
+        <h2 style="text-align: center; margin-bottom: 3rem; font-size: 2rem;">O que você vai aprender</h2>
+        
+        <div class="card module-card">
+            <h3>📦 Módulo 1: Git & Versionamento</h3>
+            <p style="color: var(--text-gray); margin: 1rem 0;">Aprenda os fundamentos do controle de versão com Git.</p>
+            <ul style="color: var(--text-gray); line-height: 2;">
+                <li>Introdução ao Git e instalação</li>
+                <li>Comandos básicos e branches</li>
+                <li>Merges e resolução de conflitos</li>
+                <li>Git Flow e boas práticas</li>
+            </ul>
+        </div>
+
+        <div class="card module-card">
+            <h3>🐙 Módulo 2: GitHub na Prática</h3>
+            <p style="color: var(--text-gray); margin: 1rem 0;">Domine a principal plataforma de repositórios do mundo.</p>
+            <ul style="color: var(--text-gray); line-height: 2;">
+                <li>Criando conta e repositórios</li>
+                <li>Pull Requests e Code Review</li>
+                <li>GitHub Actions e automação</li>
+                <li>Contribuindo em projetos open source</li>
+            </ul>
+        </div>
+
+        <div class="card module-card">
+            <h3>▲ Módulo 3: Deploy com Vercel</h3>
+            <p style="color: var(--text-gray); margin: 1rem 0;">Faça deploy automático dos seus projetos.</p>
+            <ul style="color: var(--text-gray); line-height: 2;">
+                <li>Configurando Vercel</li>
+                <li>Deploy contínuo</li>
+                <li>Variáveis de ambiente</li>
+                <li>Domínios customizados</li>
+            </ul>
+        </div>
+
+        <div class="card module-card">
+            <h3>🚀 Módulo 4: Projeto Final</h3>
+            <p style="color: var(--text-gray); margin: 1rem 0;">Coloque tudo em prática com um projeto completo.</p>
+            <ul style="color: var(--text-gray); line-height: 2;">
+                <li>Planejamento do projeto</li>
+                <li>Desenvolvimento passo a passo</li>
+                <li>Testes e otimização</li>
+                <li>Deploy e apresentação</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <h2 style="font-size: 2rem; margin-bottom: 1rem;">Pronto para começar?</h2>
+        <p style="color: var(--text-gray); margin-bottom: 2rem;">Invista na sua carreira por apenas R$ 197,00</p>
+        <a href="login.html" class="btn btn-primary btn-lg">Matricular Agora</a>
+    </section>
+
+    <script src="assets/js/database.js"></script>
+</body>
+</html>

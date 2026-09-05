@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Academy - Ambiente Virtual de Aprendizagem</title>
+    <link rel="stylesheet" href="assets/css/ava.css">
+    <style>
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(17, 24, 39, 0.9)), 
+                        url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1920&h=1080&fit=crop');
+            background-size: cover;
+            background-position: center;
+            padding: 2rem;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-content p {
+            font-size: 1.5rem;
+            color: var(--text-gray);
+            margin-bottom: 2rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-lg {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        .features {
+            padding: 5rem 2rem;
+            background: var(--dark-2);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .trilhas-section {
+            padding: 5rem 2rem;
+        }
+
+        .trilha-card {
+            overflow: hidden;
+        }
+
+        .trilha-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .trilha-price {
+            font-size: 2rem;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+
+        .trilha-info {
+            display: flex;
+            gap: 1.5rem;
+            margin: 1rem 0;
+            color: var(--text-gray);
+        }
+
+        .cta-section {
+            padding: 5rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        footer {
+            background: var(--dark-2);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-gray);
+        }
+
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-content p {
+                font-size: 1.2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>🎓 Cyber Academy</h1>
+            <p>Aprenda desenvolvimento, segurança e gestão de projetos com nossa plataforma 100% offline. Estude onde quiser, quando quiser.</p>
+            <div class="hero-buttons">
+                <a href="login.html" class="btn btn-primary btn-lg">Entrar</a>
+                <a href="cadastro.html" class="btn btn-secondary btn-lg">Criar Conta Grátis</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Por que escolher a Cyber Academy?</h2>
+            <div class="grid grid-3">
+                <div class="card feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>100% Offline</h3>
+                    <p>Estude sem depender de internet. Todo o conteúdo fica salvo no seu navegador.</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3>Conteúdo Prático</h3>
+                    <p>Aulas focadas em projetos reais para você construir seu portfólio.</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Certificado Incluso</h3>
+                    <p>Receba certificado ao completar cada trilha de estudos.</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">👨‍🏫</div>
+                    <h3>Profissionais Experientes</h3>
+                    <p>Aprenda com quem trabalha no mercado e conhece as melhores práticas.</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Multi-dispositivo</h3>
+                    <p>Acesse do computador, tablet ou celular. Funciona em qualquer navegador.</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>Preço Justo</h3>
+                    <p>Cursos de qualidade com preços acessíveis. Invista na sua carreira.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trilhas Section -->
+    <section class="trilhas-section">
+        <div class="container">
+            <h2 class="section-title">Nossas Trilhas</h2>
+            <div class="grid grid-3" id="trilhas-grid">
+                <!-- Trilhas serão carregadas via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Pronto para começar?</h2>
+        <p>Junte-se a milhares de alunos e transforme sua carreira</p>
+        <a href="cadastro.html" class="btn btn-secondary btn-lg">Começar Agora</a>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Cyber Academy. Todos os direitos reservados.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+            Plataforma 100% offline - Sem backend, sem serviços externos
+        </p>
+    </footer>
+
+    <script src="assets/js/database.js"></script>
+    <script>
+        // Carrega trilhas na página inicial
+        document.addEventListener('DOMContentLoaded', async () => {
+            const trilhasGrid = document.getElementById('trilhas-grid');
+            
+            try {
+                const trilhas = DataManager.getTrilhas();
+                
+                trilhasGrid.innerHTML = trilhas.map(trilha => `
+                    <div class="card trilha-card">
+                        <img src="${trilha.imagem}" alt="${trilha.titulo}" class="trilha-image">
+                        <h3>${trilha.titulo}</h3>
+                        <p style="color: var(--text-gray); margin: 0.5rem 0;">${trilha.descricao}</p>
+                        <div class="trilha-info">
+                            <span>📚 ${trilha.totalModulos} módulos</span>
+                            <span>🎬 ${trilha.totalAulas} aulas</span>
+                            <span>⏱️ ${trilha.duracao}</span>
+                        </div>
+                        <div class="trilha-price">R$ ${trilha.preco.toFixed(2).replace('.', ',')}</div>
+                        <a href="trilha1.html?id=${trilha.id}" class="btn btn-primary btn-block">Ver Detalhes</a>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Erro ao carregar trilhas:', error);
+                trilhasGrid.innerHTML = '<p>Carregando trilhas...</p>';
+            }
+        });
+    </script>
+</body>
+</html>

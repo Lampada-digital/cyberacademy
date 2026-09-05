@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificados - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        
+        <main class="main-content">
+            <div class="container">
+                <header style="margin-bottom: 2rem;">
+                    <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">🏆 Meus Certificados</h1>
+                    <p style="color: var(--text-gray);">Certificados conquistados ao completar as trilhas</p>
+                </header>
+
+                <div class="grid grid-3" id="certificadosGrid">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        if (!Auth.requireAluno()) throw new Error('Não autorizado');
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'certificados');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCertificados();
+        });
+
+        function loadCertificados() {
+            const certificados = DataManager.getCertificadosByUserId(user.id);
+            const grid = document.getElementById('certificadosGrid');
+
+            if (certificados.length === 0) {
+                grid.innerHTML = `
+                    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🏆</div>
+                        <h3>Você ainda não tem certificados</h3>
+                        <p style="color: var(--text-gray); margin: 1rem 0;">
+                            Complete uma trilha para receber seu certificado!
+                        </p>
+                        <a href="dashboard.html" class="btn btn-primary mt-2">Ver Minhas Trilhas</a>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = certificados.map(cert => {
+                const trilha = DataManager.getTrilhaById(cert.trilhaId);
+                
+                return `
+                    <div class="certificate-card">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎓</div>
+                        <h3 style="margin-bottom: 0.5rem;">Certificado de Conclusão</h3>
+                        <p style="color: var(--text-gray); font-size: 0.9rem;">${trilha ? trilha.titulo : 'Trilha'}</p>
+                        
+                        <div class="certificate-code">${cert.codigo}</div>
+                        
+                        <p style="color: var(--text-gray); font-size: 0.85rem;">
+                            Emitido em: ${AVA.formatDate(cert.dataEmissao)}
+                        </p>
+                        
+                        <button onclick="imprimirCertificado(${cert.id})" class="btn btn-primary btn-block mt-2">
+                            📄 Imprimir
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function imprimirCertificado(certId) {
+            const cert = DataManager.getCertificados().find(c => c.id === certId);
+            if (!cert) return;
+
+            const trilha = DataManager.getTrilhaById(cert.trilhaId);
+            const userData = DataManager.getUserById(cert.userId);
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Certificado - ${userData.nome}</title>
+                    <style>
+                        body {
+                            font-family: 'Georgia', serif;
+                            text-align: center;
+                            padding: 50px;
+                            background: linear-gradient(135deg, #0a0e1a, #111827);
+                            color: #f3f4f6;
+                        }
+                        .certificate {
+                            border: 10px solid #00d9ff;
+                            padding: 40px;
+                            max-width: 800px;
+                            margin: 0 auto;
+                            background: rgba(17, 24, 39, 0.8);
+                        }
+                        h1 { font-size: 3rem; color: #00d9ff; margin-bottom: 10px; }
+                        h2 { font-size: 2rem; margin-bottom: 30px; }
+                        .recipient { font-size: 2.5rem; color: #7c3aed; margin: 30px 0; }
+                        .course { font-size: 1.5rem; margin: 20px 0; }
+                        .code { font-family: monospace; font-size: 1.2rem; margin-top: 30px; color: #9ca3af; }
+                        .date { margin-top: 20px; color: #9ca3af; }
+                    </style>
+                </head>
+                <body>
+                    <div class="certificate">
+                        <h1>🎓 Cyber Academy</h1>
+                        <h2>Certificado de Conclusão</h2>
+                        <p>Certificamos que</p>
+                        <div class="recipient">${userData.nome}</div>
+                        <p>concluiu com êxito a trilha</p>
+                        <div class="course">${trilha.titulo}</div>
+                        <p>Carga horária: ${trilha.duracao}</p>
+                        <div class="code">Código: ${cert.codigo}</div>
+                        <div class="date">Emitido em: ${AVA.formatDate(cert.dataEmissao)}</div>
+                    </div>
+                    <script>window.onload = () => { window.print(); }</script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Trilha - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        <main class="main-content">
+            <div class="container">
+                <header style="margin-bottom: 2rem;">
+                    <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">📝 Gerenciar Trilha</h1>
+                    <p style="color: var(--text-gray);">Edite módulos, aulas e materiais das trilhas</p>
+                </header>
+
+                <div class="card mb-4">
+                    <div class="form-group">
+                        <label class="form-label">Selecione a Trilha</label>
+                        <select id="trilhaSelect" class="form-control" onchange="loadTrilha(this.value)">
+                            <option value="">Escolha uma trilha...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="trilhaEditor" class="hidden">
+                    <div class="card mb-4">
+                        <div class="flex flex-between flex-center mb-3">
+                            <h2 id="trilhaTitulo"></h2>
+                            <button class="btn btn-primary btn-sm" onclick="addModulo()">+ Adicionar Módulo</button>
+                        </div>
+                        <div id="modulosList"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        if (!Auth.requireProfessor()) throw new Error('Não autorizado');
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'gerenciar-trilha', true);
+
+        let currentTrilha = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('trilhaSelect');
+            const trilhas = DataManager.getTrilhas();
+            
+            select.innerHTML = '<option value="">Escolha uma trilha...</option>' + 
+                trilhas.map(t => `<option value="${t.id}">${t.titulo}</option>`).join('');
+
+            const params = new URLSearchParams(window.location.search);
+            const trilhaId = params.get('id');
+            if (trilhaId) {
+                select.value = trilhaId;
+                loadTrilha(trilhaId);
+            }
+        });
+
+        function loadTrilha(id) {
+            if (!id) return;
+            
+            currentTrilha = DataManager.getTrilhaById(id);
+            if (!currentTrilha) return;
+
+            document.getElementById('trilhaEditor').classList.remove('hidden');
+            document.getElementById('trilhaTitulo').textContent = currentTrilha.titulo;
+
+            const modulosList = document.getElementById('modulosList');
+            modulosList.innerHTML = currentTrilha.modulos.map((modulo, mIndex) => `
+                <div class="module expanded mb-3" id="modulo-${modulo.id}">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <span>${mIndex + 1}. ${modulo.titulo}</span>
+                            <span style="color: var(--text-gray); font-size: 0.9rem;">(${modulo.aulas.length} aulas)</span>
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="btn btn-secondary btn-sm" onclick="addAula(${modulo.id})">+ Aula</button>
+                            <button class="btn btn-danger btn-sm" onclick="removeModulo(${modulo.id})">Excluir</button>
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="lesson-list">
+                            ${modulo.aulas.map((aula, aIndex) => `
+                                <div class="lesson-item">
+                                    <span class="lesson-icon">${aula.tipo === 'pratica' ? '🛠️' : '▶️'}</span>
+                                    <div class="lesson-info">
+                                        <div class="lesson-title">${aIndex + 1}. ${aula.titulo}</div>
+                                        <div class="lesson-duration">${aula.duracao} • ${aula.tipo}</div>
+                                    </div>
+                                    <button class="btn btn-secondary btn-sm" onclick="editAula(${modulo.id}, ${aula.id})">Editar</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addModulo() {
+            const titulo = prompt('Nome do novo módulo:');
+            if (!titulo) return;
+
+            currentTrilha.modulos.push({
+                id: Date.now(),
+                titulo: titulo,
+                aulas: []
+            });
+
+            DataManager.updateTrilha(currentTrilha);
+            loadTrilha(currentTrilha.id);
+            AVA.showToast('Módulo adicionado!', 'success');
+        }
+
+        function removeModulo(moduloId) {
+            if (!confirm('Tem certeza que deseja excluir este módulo?')) return;
+            
+            currentTrilha.modulos = currentTrilha.modulos.filter(m => m.id !== moduloId);
+            DataManager.updateTrilha(currentTrilha);
+            loadTrilha(currentTrilha.id);
+        }
+
+        function addAula(moduloId) {
+            const titulo = prompt('Título da nova aula:');
+            if (!titulo) return;
+            
+            const duracao = prompt('Duração (ex: 30min):', '30min') || '30min';
+            const tipo = confirm('OK para Vídeo, Cancelar para Prática') ? 'video' : 'pratica';
+            const videoUrl = tipo === 'video' ? (prompt('URL do vídeo (YouTube/Vimeo) ou deixe vazio:') || '') : '';
+
+            const modulo = currentTrilha.modulos.find(m => m.id === moduloId);
+            if (modulo) {
+                modulo.aulas.push({
+                    id: Date.now(),
+                    titulo,
+                    duracao,
+                    tipo,
+                    videoUrl,
+                    descricao: ''
+                });
+                DataManager.updateTrilha(currentTrilha);
+                loadTrilha(currentTrilha.id);
+                AVA.showToast('Aula adicionada!', 'success');
+            }
+        }
+
+        function editAula(moduloId, aulaId) {
+            const modulo = currentTrilha.modulos.find(m => m.id === moduloId);
+            const aula = modulo.aulas.find(a => a.id === aulaId);
+            
+            if (!aula) return;
+
+            const titulo = prompt('Título:', aula.titulo);
+            if (!titulo) return;
+
+            aula.titulo = titulo;
+            aula.duracao = prompt('Duração:', aula.duracao) || aula.duracao;
+            aula.videoUrl = prompt('URL do vídeo:', aula.videoUrl) || '';
+
+            DataManager.updateTrilha(currentTrilha);
+            loadTrilha(currentTrilha.id);
+            AVA.showToast('Aula atualizada!', 'success');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard do Aluno - Cyber Academy</title>
+    <link rel="stylesheet" href="../assets/css/ava.css">
+</head>
+<body>
+    <div class="ava-layout">
+        <div id="sidebar"></div>
+        
+        <main class="main-content">
+            <div class="container">
+                <header style="margin-bottom: 2rem;">
+                    <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">👋 Bem-vindo de volta!</h1>
+                    <p style="color: var(--text-gray);">Continue seus estudos onde parou</p>
+                </header>
+
+                <!-- Estatísticas -->
+                <div class="grid grid-4 mb-4">
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">📚</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Trilhas Ativas</p>
+                                <h3 style="font-size: 2rem;" id="statTrilhas">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">🎬</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Aulas Concluídas</p>
+                                <h3 style="font-size: 2rem;" id="statAulas">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">⏱️</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Horas de Estudo</p>
+                                <h3 style="font-size: 2rem;" id="statHoras">0h</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 2.5rem;">🏆</div>
+                            <div>
+                                <p style="color: var(--text-gray); font-size: 0.9rem;">Certificados</p>
+                                <h3 style="font-size: 2rem;" id="statCertificados">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Continuar Estudando -->
+                <section class="mb-4">
+                    <div class="flex flex-between mb-2">
+                        <h2 style="font-size: 1.5rem;">📖 Continuar Estudando</h2>
+                    </div>
+                    <div id="continuarEstudando" class="card">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </section>
+
+                <!-- Minhas Trilhas -->
+                <section>
+                    <div class="flex flex-between mb-2">
+                        <h2 style="font-size: 1.5rem;">📚 Minhas Trilhas</h2>
+                        <a href="matricula.html" class="btn btn-secondary btn-sm">+ Nova Matrícula</a>
+                    </div>
+                    <div class="grid grid-3" id="minhasTrilhasGrid">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/database.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/ava.js"></script>
+    <script>
+        // Verifica autenticação
+        if (!Auth.requireAluno()) {
+            throw new Error('Não autorizado');
+        }
+
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebar').innerHTML = Auth.buildSidebar(user, 'dashboard');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDashboardData();
+        });
+
+        async function loadDashboardData() {
+            const matriculas = DataManager.getMatriculasByUserId(user.id);
+            const certificados = DataManager.getCertificadosByUserId(user.id);
+            
+            // Atualiza estatísticas
+            document.getElementById('statTrilhas').textContent = matriculas.length;
+            document.getElementById('statCertificados').textContent = certificados.length;
+            
+            let totalAulasConcluidas = 0;
+            let totalHoras = 0;
+
+            // Renderiza trilhas
+            const minhasTrilhasGrid = document.getElementById('minhasTrilhasGrid');
+            
+            if (matriculas.length === 0) {
+                minhasTrilhasGrid.innerHTML = `
+                    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                        <h3>Você ainda não tem matrículas</h3>
+                        <p style="color: var(--text-gray); margin: 1rem 0;">Escolha uma trilha e comece a estudar agora!</p>
+                        <a href="../matricula.html" class="btn btn-primary">Ver Trilhas Disponíveis</a>
+                    </div>
+                `;
+                
+                document.getElementById('continuarEstudando').innerHTML = `
+                    <p style="text-align: center; padding: 2rem; color: var(--text-gray);">
+                        Faça sua primeira matrícula para começar a estudar
+                    </p>
+                `;
+                return;
+            }
+
+            const trilhasContent = [];
+            
+            for (const matricula of matriculas) {
+                const trilha = DataManager.getTrilhaById(matricula.trilhaId);
+                if (!trilha) continue;
+
+                const progresso = AVA.calcularProgressoTrilha(user.id, trilha.id);
+                
+                // Conta aulas concluídas
+                const progressoData = DataManager.getProgressoByUser(user.id);
+                const key = `${user.id}_${trilha.id}`;
+                const progressoTrilha = progressoData[key] || {};
+                
+                Object.values(progressoTrilha).forEach(aulas => {
+                    totalAulasConcluidas += aulas.length;
+                });
+
+                // Estima horas (média de 30min por aula)
+                totalHoras += (totalAulasConcluidas * 0.5);
+
+                trilhasContent.push(`
+                    <div class="card trilha-card" onclick="window.location.href='trilha.html?id=${trilha.id}'" style="cursor: pointer;">
+                        <img src="${trilha.imagem}" alt="${trilha.titulo}" 
+                             style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;">
+                        <h3>${trilha.titulo}</h3>
+                        <p style="color: var(--text-gray); font-size: 0.9rem; margin: 0.5rem 0;">
+                            ${trilha.totalModulos} módulos • ${trilha.totalAulas} aulas
+                        </p>
+                        
+                        <div style="margin: 1rem 0;">
+                            <div class="flex flex-between mb-1">
+                                <span style="font-size: 0.9rem;">Progresso</span>
+                                <span style="font-size: 0.9rem; color: var(--primary);">${progresso}%</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-fill" style="width: ${progresso}%"></div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-block btn-sm">
+                            ${progresso > 0 ? 'Continuar' : 'Começar'} Estudos
+                        </button>
+                    </div>
+                `);
+            }
+
+            minhasTrilhasGrid.innerHTML = trilhasContent.join('');
+            document.getElementById('statAulas').textContent = totalAulasConcluidas;
+            document.getElementById('statHoras').textContent = `${totalHoras.toFixed(1)}h`;
+
+            // Carrega próxima aula para "Continuar Estudando"
+            loadContinuarEstudando(matriculas);
+        }
+
+        function loadContinuarEstudando(matriculas) {
+            const container = document.getElementById('continuarEstudando');
+            
+            // Encontra a primeira trilha com progresso incompleto
+            for (const matricula of matriculas) {
+                const proxima = AVA.proximaAula(user.id, matricula.trilhaId);
+                
+                if (proxima) {
+                    const trilha = DataManager.getTrilhaById(matricula.trilhaId);
+                    const progresso = AVA.calcularProgressoTrilha(user.id, trilha.id);
+                    
+                    container.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                                    <img src="${trilha.imagem}" alt="${trilha.titulo}" 
+                                         style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px;">
+                                    <div>
+                                        <h4 style="margin-bottom: 0.25rem;">${trilha.titulo}</h4>
+                                        <p style="color: var(--text-gray); font-size: 0.9rem;">
+                                            Módulo: ${proxima.modulo.titulo}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div style="background: var(--dark-3); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <div style="font-size: 1.5rem;">▶️</div>
+                                        <div>
+                                            <p style="font-weight: 600; margin-bottom: 0.25rem;">${proxima.aula.titulo}</p>
+                                            <p style="color: var(--text-gray); font-size: 0.85rem;">
+                                                Duração: ${proxima.aula.duracao} • Tipo: ${proxima.aula.tipo}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 1rem;">
+                                    <div class="flex flex-between mb-1">
+                                        <span style="font-size: 0.9rem; color: var(--text-gray);">Progresso da trilha</span>
+                                        <span style="font-size: 0.9rem; color: var(--primary);">${progresso}%</span>
+                                    </div>
+                                    <div class="progress-container">
+                                        <div class="progress-fill" style="width: ${progresso}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <a href="aula.html?trilhaId=${trilha.id}&moduloId=${proxima.modulo.id}&aulaId=${proxima.aula.id}" 
+                                   class="btn btn-primary btn-lg">
+                                    Continuar →
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+            }
+            
+            // Todas completas
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+                    <h3>Parabéns! Você completou todas as suas trilhas!</h3>
+                    <p style="color: var(--text-gray); margin: 1rem 0;">
+                        Que tal se matricular em uma nova trilha?
+                    </p>
+                    <a href="../matricula.html" class="btn btn-secondary">Ver Trilhas Disponíveis</a>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
